@@ -18,7 +18,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         $error = "❌ Passwords do not match!";
     }
     else {
-        // ✅ Fix 1: Prepared statement (no SQL injection)
+        
         $check = $conn->prepare("SELECT * FROM users WHERE username = ?");
         $check->bind_param("s", $username);
         $check->execute();
