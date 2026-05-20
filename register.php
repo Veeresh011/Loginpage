@@ -9,11 +9,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     $password = $_POST['password'];
     $confirm  = $_POST['confirm'];
 
-    // Check if fields empty
+    
     if(empty($username) || empty($password)) {
         $error = "⚠️ Please fill all fields!";
     }
-    // Check if passwords match
+    
     elseif($password != $confirm) {
         $error = "❌ Passwords do not match!";
     }
@@ -27,10 +27,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         if($check->num_rows > 0) {
             $error = "❌ Username already taken!";
         } else {
-            // ✅ Fix 2: Hash password with bcrypt
+            
             $hashed = password_hash($password, PASSWORD_BCRYPT);
 
-            // ✅ Fix 3: Prepared statement for INSERT
+            
             $stmt = $conn->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
             $stmt->bind_param("ss", $username, $hashed);
 
