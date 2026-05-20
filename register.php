@@ -5,12 +5,12 @@ $error = "";
 $success = "";
 
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = $_POST['username'];
-    $password = MD5($_POST['password']);
-    $confirm  = MD5($_POST['confirm']);
+    $username = trim($_POST['username']);
+    $password = $_POST['password'];
+    $confirm  = $_POST['confirm'];
 
     // Check if fields empty
-    if(empty($username) || empty($_POST['password'])) {
+    if(empty($username) || empty($password)) {
         $error = "⚠️ Please fill all fields!";
     }
     // Check if passwords match
@@ -18,24 +18,30 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         $error = "❌ Passwords do not match!";
     }
     else {
-        // Check if username already exists
-        $check = "SELECT * FROM users 
-                  WHERE username='$username'";
-        $result = mysqli_query($conn, $check);
+        // ✅ Fix 1: Prepared statement (no SQL injection)
+        $check = $conn->prepare("SELECT * FROM users WHERE username = ?");
+        $check->bind_param("s", $username);
+        $check->execute();
+        $check->store_result();
 
-        if(mysqli_num_rows($result) > 0) {
+        if($check->num_rows > 0) {
             $error = "❌ Username already taken!";
         } else {
-            // Insert new user
-            $insert = "INSERT INTO users (username, password) 
-                       VALUES ('$username', '$password')";
-            
-            if(mysqli_query($conn, $insert)) {
+            // ✅ Fix 2: Hash password with bcrypt
+            $hashed = password_hash($password, PASSWORD_BCRYPT);
+
+            // ✅ Fix 3: Prepared statement for INSERT
+            $stmt = $conn->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
+            $stmt->bind_param("ss", $username, $hashed);
+
+            if($stmt->execute()) {
                 $success = "✅ Account created! You can login now.";
             } else {
                 $error = "❌ Something went wrong!";
             }
+            $stmt->close();
         }
+        $check->close();
     }
 }
 ?>

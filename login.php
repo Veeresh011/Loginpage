@@ -1,24 +1,35 @@
-<?php
+<<?php
 include 'db.php';
 
 $error = "";
 $success = "";
 
-if($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = $_POST['username'];
-    $password = MD5($_POST['password']);
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = trim($_POST['username']);
+    $password = $_POST['password'];
 
-    $query = "SELECT * FROM users 
-              WHERE username='$username' 
-              AND password='$password'";
+    
+    $stmt = $conn->prepare("SELECT password FROM users WHERE username = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $stmt->store_result();
 
-    $result = mysqli_query($conn, $query);
+    if ($stmt->num_rows === 1) {
+        $stmt->bind_result($hashed_password);
+        $stmt->fetch();
 
-    if(mysqli_num_rows($result) == 1) {
-        $success = "✅ Login Successful! Welcome " . $username . "!";
+        
+        if (password_verify($password, $hashed_password)) {
+            $success = "✅ Login Successful! Welcome " . htmlspecialchars($username) . "!";
+            // session_start(); $_SESSION['user'] = $username; // add session
+        } else {
+            $error = "❌ Wrong username or password!";
+        }
     } else {
         $error = "❌ Wrong username or password!";
     }
+
+    $stmt->close();
 }
 ?>
 
